@@ -41,14 +41,14 @@
             FILE_INFO fileInfo = new();
             fileInfo.source_FileName = filePath;
             string designCode = System.IO.File.ReadAllText(filePath);
-            string[] line_code = designCode.Split(Environment.NewLine);
+            string[] line_code = designCode.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             int mode = 0;
 
             for (int i = 0; i < line_code.Length; i++)
             {
                 if (line_code[i].Contains("partial class "))
                 {
-                    string[] spl = line_code[i].Split(" ");
+                    string[] spl = line_code[i].Split(' ');
                     fileInfo.formName = spl[spl.Length - 1];
                 }
 
@@ -94,8 +94,8 @@
             else if (line_code.Contains("Controls.Add")) { Read_Parent(line_code, fileInfo, PARENT); }
             else if (line_code.Contains("="))
             {
-                string[] spl1 = line_code.Split("=");
-                if (spl1[0].Split(".").Length == 2) { Read_Property(line_code, fileInfo, PROPERTY); }
+                string[] spl1 = line_code.Split('=');
+                if (spl1[0].Split('.').Length == 2) { Read_Property(line_code, fileInfo, PROPERTY); }
                 else { Read_Property(line_code, fileInfo, PROPERTY); }
             }
         }
@@ -126,7 +126,7 @@
 
             if (ctrl.parent.Contains(".Panel"))
             {
-                string[] spl = ctrl.parent.Split(".");
+                string[] spl = ctrl.parent.Split('.');
                 ctrl.parent = spl[0];
                 panelNum = spl[1] == "Panel1" ? 1 : 2;
             }
@@ -177,35 +177,35 @@
 
         private static string GetFunc(string line_code)
         {
-            string[] split1 = line_code.Split("+=");
-            string[] split2 = split1[1].Split("(");
+            string[] split1 = line_code.Split(new string[] { "+=" }, StringSplitOptions.RemoveEmptyEntries);
+            string[] split2 = split1[1].Split('(');
             return split2[1].Replace(");", "");
         }
 
         private static string GetEvents(string line_code)
         {
-            string[] split1 = line_code.Split("+=");
-            string[] split2 = split1[0].Split(".");
+            string[] split1 = line_code.Split(new string[] { "+=" }, StringSplitOptions.RemoveEmptyEntries);
+            string[] split2 = split1[0].Split('.');
             string eventName = split2[split2.Length - 1];
             return eventName.Trim();
         }
 
         private static string GetProperty(string line)
         {
-            string[] split1 = line.Split("=");
+            string[] split1 = line.Split('=');
             return split1[1].Replace(";", "").Replace("\"", "").Trim();
         }
 
         private static string GetPropertyName(string line)
         {
-            string[] split1 = line.Split(" = ");
-            string[] split2 = split1[0].Split(".");
+            string[] split1 = line.Split(new string[] { " = " }, StringSplitOptions.RemoveEmptyEntries);
+            string[] split2 = split1[0].Split('.');
             return split2[split2.Length - 1].Trim();
         }
 
         private static string GetClassName(string line)
         {
-            string[] spl = line.Split(".");
+            string[] spl = line.Split('.');
             return spl[spl.Length - 1].Replace("();", "").Trim();
         }
 
@@ -224,36 +224,36 @@
             switch (mode)
             {
                 case 0:
-                    split1 = line.Split("=");
-                    split2 = split1[0].Split(".");
+                    split1 = line.Split('=');
+                    split2 = split1[0].Split('.');
                     if (split2.Length == 3) { ctrlName = split2[1].Trim(); }
                     else { ctrlName = split2[0].Trim(); }
                     break;
                 case 1:
-                    split1 = line.Split("(");
-                    split2 = split1[1].Split(".");
+                    split1 = line.Split('(');
+                    split2 = split1[1].Split('.');
                     ctrlName = split2[1].Replace(");", "").Trim();
                     break;
                 case 2:
-                    split1 = line.Split("=");
-                    split2 = split1[0].Split(".");
+                    split1 = line.Split('=');
+                    split2 = split1[0].Split('.');
                     ctrlName = split2[2].Trim();
                     break;
                 case 3:
-                    split1 = line.Split("=");
-                    split2 = split1[0].Split(".");
+                    split1 = line.Split('=');
+                    split2 = split1[0].Split('.');
                     ctrlName = split2[1].Trim();
                     break;
                 case 4:
-                    split1 = line.Split("(");
-                    split2 = split1[0].Split(".");
+                    split1 = line.Split('(');
+                    split2 = split1[0].Split('.');
                     if (split2.Length == 5) { ctrlName = split2[1] + "." + split2[2].Replace(");", "").Trim(); }
                     else if (split2.Length == 4) { ctrlName = split2[1].Replace(");", "").Trim(); }
                     else { ctrlName = split2[0].Replace(");", "").Trim(); }
                     break;
                 case 5:
-                    split1 = line.Split("+=");
-                    split2 = split1[0].Split(".");
+                    split1 = line.Split(new string[] { "+=" }, StringSplitOptions.RemoveEmptyEntries);
+                    split2 = split1[0].Split('.');
                     if (split2.Length == 3) { ctrlName = split2[1].Trim(); }
                     else { ctrlName = split2[0].Trim(); }
                     break;
@@ -269,13 +269,17 @@
             if (fName.IndexOf(".Designer.cs") == -1) { return new FILE_INFO(); }
             return ReadCode(fName);
         }
-        internal static List<string> NewFile()
+        internal static List<string> NewFile(string viewName)
         {
             return new List<string>
             {
+                //"using System;",
+                //"using System.Drawing;",
+                //"using System.Windows.Forms;",
+                //"",
                 "namespace WinFormsApp",
                 "{",
-                "    partial class Form1",
+                $"    partial class {viewName} : System.Windows.Forms.Form",
                 "    {",
                 "        /// <summary>",
                 "        ///  Required designer variable.",
@@ -310,18 +314,34 @@
             File.WriteAllText(FileName, SourceCode);
         }
 
-        internal static void Save(string SourceCode)
+        internal static void Save(string formName, string sourceCode)
         {
             SaveFileDialog dlg = new()
             {
-                FileName = "Form1.Designer.cs",
+                FileName = $"{formName}.Designer.cs",
                 InitialDirectory = @"C:\",
-                Filter = "Designer.csファイル(*.Designer.cs;*.Designer.cs)|*.Designer.cs;*.Designer.cs",
+                Filter = "Winform designer file(*.Designer.cs)|*.Designer.cs",
                 FilterIndex = 1,
-                Title = "保存先のファイルを選択してください",
+                Title = "Save the designer file",
                 RestoreDirectory = true
             };
-            if (dlg.ShowDialog() == DialogResult.OK) { File.WriteAllText(dlg.FileName, SourceCode); }
+            if (dlg.ShowDialog() == DialogResult.OK) 
+            { 
+                var parts = sourceCode.Split(new string[] { cls_create_code.FLAG_FUNC_DECLARATION }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0)
+                {
+                    File.WriteAllText(dlg.FileName, parts[0]);
+                    if (parts.Length > 1)
+                    {
+                        var fileName = dlg.FileName.Replace(".Designer.cs", ".cs");
+                        if(!File.Exists(fileName) 
+                           || MessageBox.Show($"'{fileName}' exist already, \r\noverwrite it", dlg.Title, 
+                                  MessageBoxButtons.OKCancel, MessageBoxIcon.Question, 
+                                  MessageBoxDefaultButton.Button2) == DialogResult.OK)
+                            File.WriteAllText(fileName, parts[1]);
+                    }
+                }
+            }
         }
 
         internal static FILE_INFO OpenFile()
@@ -329,9 +349,9 @@
             OpenFileDialog dlg = new()
             {
                 InitialDirectory = @"C:\",
-                Filter = "Designer.csファイル(*.Designer.cs;*.Designer.cs)|*.Designer.cs;*.Designer.cs",
+                Filter = "Winform designer file(*.Designer.cs)|*.Designer.cs",
                 FilterIndex = 1,
-                Title = "開くファイルを選択してください",
+                Title = "Open the designer file",
                 RestoreDirectory = true
             };
             if (dlg.ShowDialog() != DialogResult.OK) { return new FILE_INFO(); }

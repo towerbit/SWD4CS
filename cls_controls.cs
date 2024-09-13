@@ -45,7 +45,7 @@ namespace SWD4CS
 
             if (this.ctrl is TabPage) { CreateSelectBox(this.ctrl); }
 
-            ctrl!.Click += Ctrl_Click;
+            ctrl!.MouseClick += Ctrl_MouseClick;
             ctrl.MouseMove += ControlMouseMove;
             ctrl.MouseDown += ControlMouseDown;
         }
@@ -74,14 +74,14 @@ namespace SWD4CS
             changeFlag = false;
         }
 
-        private void Ctrl_Click(object? sender, EventArgs e)
+        private void Ctrl_MouseClick(object? sender, MouseEventArgs e)
         {
-            if (e.ToString() != "System.EventArgs")
+            //if (e.ToString() != "System.EventArgs")
             {
-                MouseEventArgs me = (MouseEventArgs)e;
+                //MouseEventArgs me = (MouseEventArgs)e;
                 if (form!.mainForm!.toolLstBox!.Text == "")
                 {
-                    SetSelected(me);
+                    SetSelected(e);
                     foreach (TreeNode n in form.mainForm.ctrlTree!.Nodes)
                     {
                         TreeNode ret = FindNode(n, this.ctrl!.Name);
@@ -90,19 +90,18 @@ namespace SWD4CS
                 }
                 else
                 {
-                    if (this.nonCtrl!.GetType() == typeof(Component)) { AddControls(me); }
+                    if (this.nonCtrl!.GetType() == typeof(Component)) { AddControls(e); }
                 }
             }
         }
 
-        private void SplitContainerPanelClick(object? sender, EventArgs e)
+        private void SplitContainerPanel_MouseClick(object? sender, MouseEventArgs e)
         {
-            MouseEventArgs me = (MouseEventArgs)e;
             SplitterPanel? panel = sender as SplitterPanel;
 
             if (e.ToString() == "System.EventArgs") { return; }
-            if (form!.mainForm!.toolLstBox!.Text == "") { SetSelected(me); }
-            else { AddControls(me, panel); }
+            if (form!.mainForm!.toolLstBox!.Text == "") { SetSelected(e); }
+            else { AddControls(e, panel); }
         }
 
         // ********************************************************************************************
@@ -203,7 +202,7 @@ namespace SWD4CS
             cls_transparent_panel trancepanel = new();
             trancepanel.Dock = DockStyle.Fill;
             trancepanel.BackColor = Color.FromArgb(0, 0, 0, 0);
-            trancepanel.Click += new System.EventHandler(Ctrl_Click);
+            trancepanel.MouseClick += new System.Windows.Forms.MouseEventHandler(Ctrl_MouseClick);
             trancepanel.MouseMove += new System.Windows.Forms.MouseEventHandler(ControlMouseMove);
             trancepanel.MouseDown += new System.Windows.Forms.MouseEventHandler(ControlMouseDown);
             ctrl.Controls.Add(trancepanel);
@@ -216,7 +215,7 @@ namespace SWD4CS
             Button pickbox = new();
             pickbox.Size = new System.Drawing.Size(24, 24);
             pickbox.Text = "▼";
-            pickbox.Click += new System.EventHandler(Ctrl_Click);
+            pickbox.MouseClick += new System.Windows.Forms.MouseEventHandler(Ctrl_MouseClick);
             pickbox.MouseMove += new System.Windows.Forms.MouseEventHandler(ControlMouseMove);
             pickbox.MouseDown += new System.Windows.Forms.MouseEventHandler(ControlMouseDown);
             ctrl.Controls.Add(pickbox);
@@ -284,11 +283,11 @@ namespace SWD4CS
                     SplitContainer? splitcontainer = this.ctrl as SplitContainer;
                     splitcontainer!.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
                     splitcontainer.Panel1.Name = this.ctrl.Name + ".Panel1";
-                    splitcontainer.Panel1.Click += new System.EventHandler(this.SplitContainerPanelClick);
+                    splitcontainer.Panel1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.SplitContainerPanel_MouseClick);
                     splitcontainer.Panel1.MouseMove += new System.Windows.Forms.MouseEventHandler(ControlMouseMove);
                     splitcontainer.Panel1.MouseDown += new System.Windows.Forms.MouseEventHandler(ControlMouseDown);
                     splitcontainer.Panel2.Name = this.ctrl.Name + ".Panel2";
-                    splitcontainer.Panel2.Click += new System.EventHandler(this.SplitContainerPanelClick);
+                    splitcontainer.Panel2.MouseClick += new System.Windows.Forms.MouseEventHandler(this.SplitContainerPanel_MouseClick);
                     splitcontainer.Panel2.MouseMove += new System.Windows.Forms.MouseEventHandler(ControlMouseMove);
                     splitcontainer.Panel2.MouseDown += new System.Windows.Forms.MouseEventHandler(ControlMouseDown);
                     break;

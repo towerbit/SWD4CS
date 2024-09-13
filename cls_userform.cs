@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 
@@ -20,7 +21,7 @@ namespace SWD4CS
         {
             this.FormClosing += new FormClosingEventHandler(userForm_FormClosing);
             this.Resize += new EventHandler(userForm_Resize);
-            this.Click += new EventHandler(Form_Click);
+            this.MouseClick += new MouseEventHandler(Form_MouseClick);
 
             this.TopLevel = false;
             this.Text = "Form1";
@@ -30,10 +31,9 @@ namespace SWD4CS
         // ********************************************************************************************
         // Event Function 
         // ********************************************************************************************
-        private void Form_Click(object? sender, EventArgs e)
+        private void Form_MouseClick(object? sender, MouseEventArgs e)
         {
-            MouseEventArgs me = (MouseEventArgs)e;
-            if (mainForm!.toolLstBox!.Text == "" && me.Button == MouseButtons.Left)
+            if (mainForm!.toolLstBox!.Text == "" && e.Button == MouseButtons.Left)
             {
                 if (!selectFlag) { SelectAllClear(); }
                 SetSelect(!selectFlag);
@@ -41,8 +41,8 @@ namespace SWD4CS
             else if (mainForm!.toolLstBox!.Text != "")
             {
                 SelectAllClear();
-                int X = (int)(me.X / grid) * grid;
-                int Y = (int)(me.Y / grid) * grid;
+                int X = (int)(e.X / grid) * grid;
+                int Y = (int)(e.Y / grid) * grid;
                 _ = new cls_controls(this, otherCtrlPanel, mainForm!.toolLstBox!.Text, this, X, Y);
                 mainForm!.toolLstBox!.SelectedIndex = 0;
             }
@@ -67,10 +67,10 @@ namespace SWD4CS
             }
             base.WndProc(ref m);
         }
-        private void BackPanel_Click(object? sender, EventArgs e)
+        private void BackPanel_MouseClick(object? sender, MouseEventArgs e)
         {
-            MouseEventArgs me = (MouseEventArgs)e;
-            if (me.Button == MouseButtons.Left) { SelectAllClear(); }
+            
+            if (e.Button == MouseButtons.Left) { SelectAllClear(); }
         }
 
         // ********************************************************************************************
@@ -80,7 +80,7 @@ namespace SWD4CS
         {
             this.mainForm = mainForm;
             this.backPanel = backPanel;
-            this.backPanel.Click += new EventHandler(BackPanel_Click);
+            this.backPanel.MouseClick += new MouseEventHandler(BackPanel_MouseClick);
             this.otherCtrlPanel = otherCtrlPanel;
             selectBox = new cls_selectbox(this, backPanel);
             SetSelect(true);
@@ -181,7 +181,7 @@ namespace SWD4CS
                 Type? delegateType = ctrl!.GetType().GetEvent(ctrlInfo.eventName[j])!.EventHandlerType;
                 MethodInfo? invoke = delegateType!.GetMethod("Invoke");
                 ParameterInfo[] pars = invoke!.GetParameters();
-                string[] split = delegateType.AssemblyQualifiedName!.Split(",");
+                string[] split = delegateType.AssemblyQualifiedName!.Split(',');
                 string newHandler = "new " + split[0];
                 SetArguments(ref funcParam, ref param, pars);
                 string decHandler;
@@ -281,8 +281,14 @@ namespace SWD4CS
             if (flag)
             {
                 mainForm!.propertyGrid!.SelectedObject = this;
-                if (this.GetType() == typeof(cls_userform)) { mainForm.propertyCtrlName!.Text = this.viewName; }
-                else { mainForm.propertyCtrlName!.Text = this.Name; }
+                if (this.GetType() == typeof(cls_userform)) 
+                { 
+                    mainForm.propertyCtrlName!.Text = this.viewName; 
+                }
+                else 
+                { 
+                    mainForm.propertyCtrlName!.Text = this.Name; 
+                }
             }
             else
             {

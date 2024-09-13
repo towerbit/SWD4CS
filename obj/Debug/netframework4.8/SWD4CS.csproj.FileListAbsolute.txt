@@ -1,0 +1,11 @@
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.csproj.AssemblyReference.cache
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.AssemblyInfoInputs.cache
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.AssemblyInfo.cs
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.csproj.CoreCompileInputs.cache
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.sourcelink.json
+C:\Users\liutao\source\repos\SWD4CS\bin\Debug\netframework4.8\SWD4CS.exe.config
+C:\Users\liutao\source\repos\SWD4CS\bin\Debug\netframework4.8\SWD4CS.exe
+C:\Users\liutao\source\repos\SWD4CS\bin\Debug\netframework4.8\SWD4CS.pdb
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.exe
+C:\Users\liutao\source\repos\SWD4CS\obj\Debug\netframework4.8\SWD4CS.pdb

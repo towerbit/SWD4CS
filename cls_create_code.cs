@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Reflection;
+using System.Text;
 
 namespace SWD4CS
 {
@@ -15,50 +16,51 @@ namespace SWD4CS
         {
             fileInfo = fInfo;
             userForm = form;
-            string source = "";
+            //string source = "";
+            var sbSource = new StringBuilder();
             List<string> lstSuspend = new();
             List<string> lstResume = new();
             string space = "";
             space = !fileInfo.source_base[0].Contains(";") ? space.PadLeft(8) : space.PadLeft(4);
 
-            source = Create_Code_Instance(source, space);
-            source = Create_Code_Suspend_Resume(source, lstSuspend, lstResume, space);
+            Create_Code_Instance(sbSource, space);
+            Create_Code_Suspend_Resume(sbSource, lstSuspend, lstResume, space);
 
             // suspend
-            for (int i = 0; i < lstSuspend.Count; i++) { source += lstSuspend[i]; }
+            for (int i = 0; i < lstSuspend.Count; i++) { sbSource.Append(lstSuspend[i]); }
 
-            source = Create_Code_Property(source, space);
+            Create_Code_Property(sbSource, space);
 
-            source = Create_Code_FormProperty(source, space);
-            source = Create_Code_FormAddControl(source, space);
+            Create_Code_FormProperty(sbSource, space);
+            Create_Code_FormAddControl(sbSource, space);
 
             // resume
-            for (int i = 0; i < lstResume.Count; i++) { source += lstResume[i]; }
+            for (int i = 0; i < lstResume.Count; i++) { sbSource.Append(lstResume[i]); }
 
-            source = Create_Code_EventDeclaration(source, space);
+            Create_Code_EventDeclaration(sbSource, space);
 
-            if (!fileInfo.source_base[0].Contains(";")) { source += "    }" + Environment.NewLine; }
+            if (!fileInfo.source_base[0].Contains(";")) { sbSource.AppendLine("    }"); }
 
-            source += "}" + Environment.NewLine;
-            source += Environment.NewLine;
+            sbSource.AppendLine("}");
+            sbSource.AppendLine();
 
             // events function
-            source = Create_Code_FuncDeclaration(source);
-            return source;
+            Create_Code_FuncDeclaration(sbSource);
+            return sbSource.ToString();
         }
 
         // ********************************************************************************************
         // private Function 
         // ********************************************************************************************
-        private static string Create_Code_Instance(string source, string space)
+        private static void Create_Code_Instance(StringBuilder sbSource, string space)
         {
             // Instance
-            for (int i = 0; i < fileInfo.source_base.Count; i++) { source += fileInfo.source_base[i] + Environment.NewLine; }
-            source += space + "{" + Environment.NewLine;
-            return source;
+            for (int i = 0; i < fileInfo.source_base.Count; i++) { sbSource.AppendLine(fileInfo.source_base[i]); }
+            sbSource.AppendLine(space + "{");
+            //return source;
         }
 
-        private static string Create_Code_Suspend_Resume(string source, List<string> lstSuspend, List<string> lstResume, string space)
+        private static void Create_Code_Suspend_Resume(StringBuilder sbSource, List<string> lstSuspend, List<string> lstResume, string space)
         {
             string[] className_group1 = new string[] { "DataGridView", "PictureBox", "SplitContainer", "TrackBar" };
             string[] className_group2 = new string[] { "GroupBox", "Panel", "StatusStrip", "TabControl", "TabPage", "FlowLayoutPanel", "TableLayoutPanel" };
@@ -66,7 +68,7 @@ namespace SWD4CS
             // Suspend & resume
             foreach (var item in userForm!.CtrlItems)
             {
-                source += $"{space}    this.{item.ctrl!.Name} = new System.Windows.Forms.{item.className}();{Environment.NewLine}";
+                sbSource.AppendLine($"{space}    this.{item.ctrl!.Name} = new System.Windows.Forms.{item.className}();");
 
                 if (className_group1.Contains(item.className))
                 {
@@ -90,10 +92,10 @@ namespace SWD4CS
             }
             lstSuspend.Add($"{space}    this.SuspendLayout();{Environment.NewLine}");
             lstResume.Add($"{space}    this.ResumeLayout(false);{Environment.NewLine}");
-            return source;
+            //return source;
         }
 
-        private static string Create_Code_Property(string source, string space)
+        private static void Create_Code_Property(StringBuilder sbSource, string space)
         {
             for (int i = 0; i < userForm!.CtrlItems.Count; i++)
             {
@@ -102,30 +104,30 @@ namespace SWD4CS
                 Component comp = userForm.CtrlItems[i].nonCtrl!;
                 Type ctlType = comp.GetType() == typeof(Component) ? ctrl.GetType() : comp.GetType();
 
-                source += $"{space}    //{Environment.NewLine}" +
-                          $"{space}    // {ctrl.Name}{Environment.NewLine}" +
-                          $"{space}    //{Environment.NewLine}";
-                source = Create_Code_AddControl(source, space, i);
+                sbSource.AppendLine($"{space}    //");
+                sbSource.AppendLine($"{space}    // {ctrl.Name}");
+                sbSource.AppendLine($"{space}    //");
+                Create_Code_AddControl(sbSource, space, i);
 
                 foreach (PropertyInfo item in ctlType.GetProperties())
                 {
                     if (!IsReadOnlyProperty(item) && HideProperty(item.Name))
                     {
-                        Get_Code_Property(ref source, ref memCode, item, userForm.CtrlItems[i], space);
+                        Get_Code_Property(sbSource, ref memCode, item, userForm.CtrlItems[i], space);
                     }
                 }
-                if (memCode != "") { source += memCode; }
-                source = Create_Code_EventsDec(source, space, userForm.CtrlItems[i]);
+                if (memCode != "") { sbSource.Append(memCode); }
+                Create_Code_EventsDec(sbSource, space, userForm.CtrlItems[i]);
             }
-            return source;
+            //return source;
         }
 
-        private static string Create_Code_FormProperty(string source, string space)
+        private static void Create_Code_FormProperty(StringBuilder sbSource, string space)
         {
             // form-property
-            source += $"{space} //{Environment.NewLine}" +
-                      $"{space} // form{Environment.NewLine}" +
-                      $"{space} //{Environment.NewLine}";
+            sbSource.AppendLine($"{space}    //");
+            sbSource.AppendLine($"{space}    // form");
+            sbSource.AppendLine($"{space}    //");
 
             Type formType = typeof(Form);
             var formProperties = userForm!.GetType().GetProperties().Where(prop => !IsReadOnlyProperty(prop) && HideProperty(prop.Name));
@@ -142,12 +144,12 @@ namespace SWD4CS
 
                     if (!string.IsNullOrEmpty(strProperty) && item.Name != "Name" && item.Name != "Location")
                     {
-                        source += str1 + strProperty + Environment.NewLine;
+                        sbSource.AppendLine( str1 + strProperty);
                     }
                 }
             }
-            source = Create_Code_FormEventsDec(source, space, userForm);
-            return source;
+            Create_Code_FormEventsDec(sbSource, space, userForm);
+            //return source;
         }
 
         private static bool IsReadOnlyProperty(PropertyInfo item)
@@ -156,22 +158,22 @@ namespace SWD4CS
             return attributes.Length > 0;
         }
 
-        private static string Create_Code_FormAddControl(string source, string space)
+        private static void Create_Code_FormAddControl(StringBuilder sbSource, string space)
         {
             // AddControl
             foreach (var ctrlItem in userForm!.CtrlItems.Where(i => i.ctrl!.Parent == userForm))
             {
-                source += $"{space}    this.Controls.Add(this.{ctrlItem.ctrl!.Name});{Environment.NewLine}";
+                sbSource.AppendLine( $"{space}    this.Controls.Add(this.{ctrlItem.ctrl!.Name});");
             }
-            return source;
+            //return source;
         }
 
-        private static string Create_Code_EventDeclaration(string source, string space)
+        private static void Create_Code_EventDeclaration(StringBuilder sbSource, string space)
         {
-            source += $"{space}}} {Environment.NewLine}" +
-                      $"{Environment.NewLine}" +
-                      $"{space}#endregion {Environment.NewLine}" +
-                      $"{Environment.NewLine}";
+            sbSource.AppendLine($"{space}}} ");
+            sbSource.AppendLine();
+            sbSource.AppendLine($"{space}#endregion");
+            sbSource.AppendLine();
 
             // declaration
             foreach (var ctrlItem in userForm!.CtrlItems)
@@ -180,39 +182,58 @@ namespace SWD4CS
                 string typeName1 = ctrlItem.ctrl!.GetType().ToString();
                 string typeName2 = ctrlItem.nonCtrl!.GetType().ToString();
                 string dec = type == typeof(Component) ? typeName1 : typeName2;
-                source += $"{space}private {dec} {ctrlItem.ctrl!.Name};{Environment.NewLine}";
+                sbSource.AppendLine($"{space}private {dec} {ctrlItem.ctrl!.Name};");
             }
-            return source;
+            //return source;
         }
 
-        private static string Create_Code_FuncDeclaration(string source)
+        public const string FLAG_FUNC_DECLARATION = "// --- Remove the following code if you don't need to create/auto-save it to\r\n";
+
+        private static void Create_Code_FuncDeclaration(StringBuilder sbSource)
         {
+            sbSource.Append(FLAG_FUNC_DECLARATION);
+            sbSource.AppendLine($"// {userForm!.viewName}.cs generated by SWD4CS");
+            sbSource.AppendLine("using System;");
+            sbSource.AppendLine("using System.Drawing;");
+            sbSource.AppendLine("using System.Windows.Forms;");
+            sbSource.AppendLine();
+            sbSource.AppendLine("namespace WinFormsApp");
+            sbSource.AppendLine("{");
+            sbSource.AppendLine($"    public class {userForm!.viewName}");
+            sbSource.AppendLine("    {");
+            sbSource.AppendLine($"        public {userForm!.viewName}()");
+            sbSource.AppendLine("        {");
+            sbSource.AppendLine("            InitializeComponent();");
+            sbSource.AppendLine("        }");
+            sbSource.AppendLine();
             // control
             for (int i = 0; i < userForm!.CtrlItems.Count; i++)
             {
                 for (int j = 0; j < userForm.CtrlItems[i].decFunc.Count; j++)
                 {
-                    source += $"// {userForm.CtrlItems[i].decFunc[j]}{Environment.NewLine}" +
-                              $"// {{{Environment.NewLine}" +
-                              $"// {Environment.NewLine}" +
-                              $"// }}{Environment.NewLine}" +
-                              Environment.NewLine;
+                    sbSource.AppendLine($"        {userForm.CtrlItems[i].decFunc[j]}");
+                    sbSource.AppendLine("        {{");
+                    sbSource.AppendLine("        ");
+                    sbSource.AppendLine("        }}");
+                    sbSource.AppendLine();
                 }
             }
 
             // form
             foreach (string decFunc in userForm.decFunc)
             {
-                source += $"// {decFunc}{Environment.NewLine}" +
-                          "// {" + Environment.NewLine +
-                          "//" + Environment.NewLine +
-                          "// }" + Environment.NewLine +
-                          Environment.NewLine;
+                sbSource.AppendLine($"        {decFunc}");
+                sbSource.AppendLine("        {");
+                sbSource.AppendLine("        ");
+                sbSource.AppendLine("        }");
+                sbSource.AppendLine();
             }
-            return source;
+            sbSource.AppendLine("    }");
+            sbSource.AppendLine("}");
+            //return source;
         }
 
-        private static string Create_Code_AddControl(string source, string space, int i)
+        private static void Create_Code_AddControl(StringBuilder sbSource, string space, int i)
         {
             // AddControl
             Control ctrl1 = userForm!.CtrlItems[i].ctrl!;
@@ -223,24 +244,24 @@ namespace SWD4CS
 
                 if (ctrl1!.Name == ctrl2!.Parent!.Name)
                 {
-                    source += $"{space}    this.{ctrl1.Name}.Controls.Add(this.{ctrl2.Name});{Environment.NewLine}";
+                    sbSource.AppendLine( $"{space}    this.{ctrl1.Name}.Controls.Add(this.{ctrl2.Name});");
                 }
                 else if (ctrl1.Name == ctrl2.Parent!.Parent!.Name)
                 {
                     if (ctrl2.Parent!.Name.Contains("Panel1"))
                     {
-                        source += $"{space}    this.{ctrl1.Name}.Panel1.Controls.Add(this.{ctrl2.Name});{Environment.NewLine}";
+                        sbSource.AppendLine($"{space}    this.{ctrl1.Name}.Panel1.Controls.Add(this.{ctrl2.Name});");
                     }
                     else if (ctrl2.Parent!.Name.Contains("Panel2"))
                     {
-                        source += $"{space}    this.{ctrl1!.Name}.Panel2.Controls.Add(this.{ctrl2.Name});{Environment.NewLine}";
+                        sbSource.AppendLine($"{space}    this.{ctrl1!.Name}.Panel2.Controls.Add(this.{ctrl2.Name});");
                     }
                 }
             }
-            return source;
+            //return source;
         }
 
-        private static void Get_Code_Property(ref string source, ref string memCode, PropertyInfo item, cls_controls ctrlItems, string space)
+        private static void Get_Code_Property(StringBuilder sbSource, ref string memCode, PropertyInfo item, cls_controls ctrlItems, string space)
         {
             Component? comp = (ctrlItems.nonCtrl!.GetType() == typeof(Component)) ? ctrlItems.ctrl : ctrlItems.nonCtrl;
             Component? baseCtrl = GetBaseCtrl(ctrlItems);
@@ -254,23 +275,23 @@ namespace SWD4CS
             if (strProperty == "") { return; }
 
             bool flag = item.Name != "SplitterDistance" && item.Name != "Anchor";
-            if (flag) { source += str1 + strProperty + Environment.NewLine; }
+            if (flag) { sbSource.AppendLine(str1 + strProperty); }
             else { memCode += str1 + strProperty + Environment.NewLine; }
         }
 
-        private static string Create_Code_EventsDec(string source, string space, cls_controls cls_ctrl)
+        private static void Create_Code_EventsDec(StringBuilder sbSource, string space, cls_controls cls_ctrl)
         {
             int cnt = cls_ctrl.decHandler.Count;
             for (int i = 0; i < cnt; i++)
-            { source += space + "    " + cls_ctrl.decHandler[i] + Environment.NewLine; }
-            return source;
+            { sbSource.AppendLine(space + "    " + cls_ctrl.decHandler[i]); }
+            //return source;
         }
 
-        private static string Create_Code_FormEventsDec(string source, string space, cls_userform userForm)
+        private static void Create_Code_FormEventsDec(StringBuilder sbSource, string space, cls_userform userForm)
         {
             int cnt = userForm.decHandler.Count;
-            for (int i = 0; i < cnt; i++) { source += space + "    " + userForm.decHandler[i] + Environment.NewLine; }
-            return source;
+            for (int i = 0; i < cnt; i++) { sbSource.AppendLine(space + "    " + userForm.decHandler[i]); }
+            //return source;
         }
 
         private static string AnchorStyles2String(object? propertyinfo)

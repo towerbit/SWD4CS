@@ -11,6 +11,11 @@ namespace SWD4CS
         {
             this.DoubleBuffered = true;
             this.AllowUserToAddRows = false;
+            this.AllowUserToDeleteRows = false;
+            this.AllowUserToOrderColumns = false;
+            this.AllowUserToResizeColumns = true;
+            this.AllowUserToResizeRows = false;
+            this.RowHeadersVisible = false;
             this.CellMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(cls_user_datagridview1_CellMouseDoubleClick);
         }
 
@@ -24,10 +29,10 @@ namespace SWD4CS
 
             for (int i = 0; i < form.decHandler.Count; i++)
             {
-                split = form.decHandler[i].Split("+=")[0].Split(".");
-                evnt.Add(split[^1].Trim());
-                split = form.decFunc[i].Split("(")[0].Split(" ");
-                fnc.Add(split[^1].Trim());
+                split = form.decHandler[i].Split(new string[] { "+=" }, StringSplitOptions.RemoveEmptyEntries)[0].Split('.');
+                evnt.Add(split.Last().Trim());
+                split = form.decFunc[i].Split('(')[0].Split(' ');
+                fnc.Add(split.Last().Trim());
             }
             SetEventsData(flag, form, evnt, fnc);
         }
@@ -42,10 +47,10 @@ namespace SWD4CS
 
             for (int i = 0; i < ctrl.decHandler.Count; i++)
             {
-                split = ctrl.decHandler[i].Split("+=")[0].Split(".");
-                evnt.Add(split[^1].Trim());
-                split = ctrl.decFunc[i].Split("(")[0].Split(" ");
-                fnc.Add(split[^1].Trim());
+                split = ctrl.decHandler[i].Split(new string[]{"+=" }, StringSplitOptions.RemoveEmptyEntries)[0].Split('.');
+                evnt.Add(split.Last().Trim());
+                split = ctrl.decFunc[i].Split('(')[0].Split(' ');
+                fnc.Add(split.Last().Trim());
             }
 
             Type type = ctrl.nonCtrl!.GetType();
@@ -80,6 +85,7 @@ namespace SWD4CS
             this.DataSource = table;
             this.Sort(this.Columns[0], System.ComponentModel.ListSortDirection.Ascending);
             this.Columns[0].ReadOnly = true;
+            this.Columns[0].DefaultCellStyle.BackColor = SystemColors.Control;
             this.Columns[1].ReadOnly = true;
             this.Columns[0].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             this.Columns[1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
@@ -97,30 +103,33 @@ namespace SWD4CS
                 if (this.cls_ctrl.nonCtrl!.GetType() != typeof(Component)) { mode = true; }
             }
 
-            string? eventName = this.Rows[e.RowIndex].Cells[0].Value.ToString();
-            string? newHandler;
-            string funcParam = "";
-            string param = "";
-            string? funcName = ctrl!.Name + "_" + eventName;
-
-            if (this.Rows[e.RowIndex].Cells[1].Value.ToString() == "")
+            if (e.RowIndex >= 0)
             {
-                this.Rows[e.RowIndex].Cells[1].Value = funcName;
-                Type? delegateType;
+                string? eventName = this.Rows[e.RowIndex].Cells[0].Value.ToString();
+                string? newHandler;
+                string funcParam = "";
+                string param = "";
+                string? funcName = ctrl!.Name + "_" + eventName;
 
-                if (mode) { delegateType = this.cls_ctrl!.nonCtrl!.GetType().GetEvent(eventName!)!.EventHandlerType; }
-                else { delegateType = ctrl!.GetType().GetEvent(eventName!)!.EventHandlerType; }
+                if (this.Rows[e.RowIndex].Cells[1].Value.ToString() == "")
+                {
+                    this.Rows[e.RowIndex].Cells[1].Value = funcName;
+                    Type? delegateType;
 
-                MethodInfo? invoke = delegateType!.GetMethod("Invoke");
-                ParameterInfo[] pars = invoke!.GetParameters();
-                string[] split = delegateType.AssemblyQualifiedName!.Split(",");
-                newHandler = "new " + split[0];
-                SetArguments(ref funcParam, ref param, pars);
-                string decHandler = GetDecHandler(eventName, newHandler, funcName, ctrl!.Name);
-                string decFunc = "private void " + funcName + "(" + funcParam + ")";
-                DeclarationAdd(decHandler, decFunc);
+                    if (mode) { delegateType = this.cls_ctrl!.nonCtrl!.GetType().GetEvent(eventName!)!.EventHandlerType; }
+                    else { delegateType = ctrl!.GetType().GetEvent(eventName!)!.EventHandlerType; }
+
+                    MethodInfo? invoke = delegateType!.GetMethod("Invoke");
+                    ParameterInfo[] pars = invoke!.GetParameters();
+                    string[] split = delegateType.AssemblyQualifiedName!.Split(',');
+                    newHandler = "new " + split[0];
+                    SetArguments(ref funcParam, ref param, pars);
+                    string decHandler = GetDecHandler(eventName, newHandler, funcName, ctrl!.Name);
+                    string decFunc = "private void " + funcName + "(" + funcParam + ")";
+                    DeclarationAdd(decHandler, decFunc);
+                }
+                else { Delete_Event(e, funcName); }
             }
-            else { Delete_Event(e, funcName); }
         }
 
         private void Delete_Event(DataGridViewCellMouseEventArgs e, string funcName)
@@ -132,8 +141,8 @@ namespace SWD4CS
 
             for (int i = 0; i < decFuncList.Count; i++)
             {
-                string[] split = decFuncList[i].Split("(")[0].Split(" ");
-                if (split[^1] == funcName)
+                string[] split = decFuncList[i].Split('(')[0].Split(' ');
+                if (split.Last() == funcName)
                 {
                     decHandlerList.RemoveAt(i);
                     decFuncList.RemoveAt(i);

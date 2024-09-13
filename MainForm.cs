@@ -49,7 +49,7 @@ public partial class MainForm : Form
         designTab.SelectedIndex = 0;
 
         if (sourceFileName != "") { cls_file.SaveAs(sourceFileName, sourceTxtBox.Text); }
-        else { cls_file.Save(sourceTxtBox.Text); }
+        else { cls_file.Save(userForm!.viewName, sourceTxtBox.Text); }
     }
     private void openToolStripMenuItem_Click(object? sender, EventArgs e)
     {
@@ -66,7 +66,7 @@ public partial class MainForm : Form
         switch (designTab.SelectedIndex)
         {
             case 1:
-                if (fileInfo.source_base == null) { fileInfo.source_base = cls_file.NewFile(); }
+                if (fileInfo.source_base == null) { fileInfo.source_base = cls_file.NewFile(userForm!.viewName); }
                 sourceTxtBox.Text = cls_create_code.Create_SourceCode(fileInfo, userForm!);
                 break;
         }
@@ -74,19 +74,23 @@ public partial class MainForm : Form
 
     private void nameTxtBox_TextChanged(System.Object? sender, System.EventArgs e)
     {
-        if (propertyGrid!.SelectedObject != null && propertyGrid.SelectedObject is Form == false)
-        {
-
-            for (int i = 0; i < userForm!.CtrlItems.Count; i++)
+        if (propertyGrid!.SelectedObject != null)
+            if (propertyGrid.SelectedObject is Form)
             {
-                if (ReferenceEquals(userForm.CtrlItems[i].ctrl, propertyGrid!.SelectedObject) || ReferenceEquals(userForm.CtrlItems[i].nonCtrl, propertyGrid!.SelectedObject))
+                userForm!.viewName = propertyCtrlName!.Text;
+            }
+            else
+            {
+                for (int i = 0; i < userForm!.CtrlItems.Count; i++)
                 {
-                    change_EventsName(userForm.CtrlItems[i].ctrl!.Name, i);
-                    userForm.CtrlItems[i].ctrl!.Name = propertyCtrlName!.Text;
-                    break;
+                    if (ReferenceEquals(userForm.CtrlItems[i].ctrl, propertyGrid!.SelectedObject) || ReferenceEquals(userForm.CtrlItems[i].nonCtrl, propertyGrid!.SelectedObject))
+                    {
+                        change_EventsName(userForm.CtrlItems[i].ctrl!.Name, i);
+                        userForm.CtrlItems[i].ctrl!.Name = propertyCtrlName!.Text;
+                        break;
+                    }
                 }
             }
-        }
     }
 
     private void ctrlsTab_SelectedIndexChanged(System.Object? sender, System.EventArgs e)
@@ -231,7 +235,7 @@ public partial class MainForm : Form
         this.eventView.Location = new System.Drawing.Point(3, 3);
         this.eventView.Name = "evtGridView";
         this.eventView.RowHeadersWidth = 51;
-        this.eventView.RowTemplate.Height = 29;
+        this.eventView.RowTemplate.Height = 22;
         this.eventView.Size = new System.Drawing.Size(253, 561);
         this.eventView.TabIndex = 0;
         // 
